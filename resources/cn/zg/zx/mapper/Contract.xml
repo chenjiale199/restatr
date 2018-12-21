@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zg.zx.mapper.ContractMapper">
+<!--打印购销合同  -->
+	<resultMap type="cn.zg.zx.vo.ContractCombo" id="contractComboRM">
+	
+		<id property="id" column="CONTRACT_ID"/>
+		
+		<result property="offeror" column="OFFEROR"/>
+		<result property="contractNo" column="CONTRACT_NO"/>
+		
+		<result property="signingDate" column="SIGNING_DATE"/>
+		<result property="inputBy" column="INPUT_BY"/>
+		<result property="checkBy" column="CHECK_BY"/>
+		<result property="inspector" column="INSPECTOR"/>
+		<result property="crequest" column="CREQUEST"/>
+		<result property="importNum" column="IMPORT_NUM"/>
+		<result property="remark" column="REMARK"/>
+		<result property="printStyle" column="PRINT_STYLE"/>
+		<collection property="cproducts" ofType="cn.zg.zx.vo.CProductCombo">
+			<id property="productId" column="CONTRACT_PRODUCT_ID"/>
+			<result property="productNo" column="PRODUCT_NO"/>
+			<result property="productImage" column="PRODUCT_IMAGE"/>
+			<result property="productDesc" column="PRODUCT_DESC"/>
+			<result property="cnumber" column="CNUMBER"/>
+			<result property="packingUnit" column="PACKING_UNIT"/>
+			<result property="price" column="PRICE"/>
+			<association property="factory" javaType="cn.zg.zx.vo.FactoryCombo">
+				<id property="factoryId" column="FACTORY_ID"/>
+				<result property="factoryName" column="FACTORY_NAME"/>
+				<result property="contractor" column="CONTRACTOR"/>
+				<result property="phone" column="PHONE"/>
+			</association>
+		</collection>
+	</resultMap>
+	<select id="combo" parameterType="string" resultMap="contractComboRM">
+	select
+		cc.CONTRACT_ID,CONTRACT_NO,INPUT_BY,CHECK_BY,INSPECTOR,
+		CREQUEST,IMPORT_NUM,REMARK,PRINT_STYLE,CREATE_BY,CREATE_DEPT,
+		
+		CONTRACT_PRODUCT_ID,PRODUCT_NO,PRODUCT_IMAGE,PRODUCT_DESC,CNUMBER,PACKING_UNIT,PRICE,
+		FACTORY_ID,FACTORY_NAME,CONTRACTOR,PHONE
+	from
+	(
+		SELECT
+			CONTRACT_ID,CONTRACT_NO,INPUT_BY,CHECK_BY,INSPECTOR,
+			CREQUEST,IMPORT_NUM,REMARK,PRINT_STYLE,CREATE_BY,CREATE_DEPT
+		FROM
+			contract_c
+	)cc
+	LEFT JOIN
+	(
+		SELECT
+			CONTRACT_PRODUCT_ID,CONTRACT_ID,PRODUCT_NO,PRODUCT_IMAGE,PRODUCT_DESC,CNUMBER,PACKING_UNIT,PRICE,
+		  	cpc.FACTORY_ID,FACTORY_NAME,CONTRACTOR,PHONE
+		FROM
+			contract_product_c cpc
+		LEFT JOIN
+			factory_c fc
+		ON 
+			cpc.factory_id=fc.factory_id
+	)cpf
+	on
+		cc.contract_id=cpf.contract_id
+	where 
+    	cc.CONTRACT_ID=#{id}
+	</select>
+	<!--购销合同主从界面  -->
+	<resultMap type="cn.zg.zx.vo.ContractView" id="contractViewRM">
+		<id property="id" column="CONTRACT_ID"/>
+		
+		<result property="offeror" column="OFFEROR"/>
+		<result property="contractNo" column="CONTRACT_NO"/>
+		
+		<result property="signingDate" column="SIGNING_DATE"/>
+		<result property="inputBy" column="INPUT_BY"/>
+		<result property="checkBy" column="CHECK_BY"/>
+		<result property="inspector" column="INSPECTOR"/>
+		<result property="crequest" column="CREQUEST"/>
+		<result property="customName" column="CUSTOM_NAME"/>
+		<result property="shipTime" column="SHIP_TIME"/>
+		<result property="importNum" column="IMPORT_NUM"/>
+		<result property="deliveryPeriod" column="DELIVERY_PERIOD"/>
+		<result property="remark" column="REMARK"/>
+		<result property="printStyle" column="PRINT_STYLE"/>
+		<result property="tradeTerms" column="TRADE_TERMS"/>
+		
+		<collection property="cproducts" ofType="cn.zg.zx.vo.CProductView">
+			<id property="productId" column="CONTRACT_PRODUCT_ID"/>
+			<result property="productNo" column="PRODUCT_NO"/>
+			<result property="productDesc" column="PRODUCT_DESC"/>
+			<result property="cnumber" column="CNUMBER"/>
+			<result property="packingUnit" column="PACKING_UNIT"/>
+			<result property="price" column="PRICE"/>
+			<result property="amount" column="AMOUNT"/>
+			<association property="factory" javaType="cn.zg.zx.vo.FactoryView">
+				<id property="factoryId" column="FACTORY_ID"/>
+				<result property="factoryName" column="FACTORY_NAME"/>
+			</association>
+			
+			<collection property="extCproducts" ofType="cn.zg.zx.vo.ExtCproductView">
+				<id property="extCproductId" column="ext_id"/>
+				<result property="productNo" column="EXT_PRODUCT_NO"/>
+				<result property="productDesc" column="EXT_PRODUCT_DESC"/>
+				<result property="cnumber" column="EXT_CNUMBER"/>
+				<result property="packingUnit" column="EXT_PACKING_UNIT"/>
+				<result property="price" column="EXT_PRICE"/>
+				<result property="amount" column="EXT_AMOUNT"/>
+				<association property="factory" javaType="cn.zg.zx.vo.FactoryView">
+					<id property="factoryId" column="EXT_FACTORY_ID"/>
+					<result property="factoryName" column="EXT_FACTORY_NAME"/>
+				</association>
+			</collection>
+		</collection>		
+	</resultMap>
+	<select id="find" parameterType="cn.zg.zx.domain.Contract" resultMap="contractRM">
+		select 
+			CONTRACT_ID,
+		    CONTRACT_NO,
+			(
+				select count(*) from contract_product_c where CONTRACT_ID=cc.CONTRACT_ID
+			) as cpnum, 
+			(
+				select count(*) as epnum from ext_cproduct_c 
+				where CONTRACT_PRODUCT_ID in
+				(
+					select CONTRACT_PRODUCT_ID 
+					from contract_product_c
+					where CONTRACT_ID=cc.CONTRACT_ID
+				)
+			) as epnum,
+		    INPUT_BY,
+			CHECK_BY,
+			INSPECTOR,
+			(
+				select sum(amount) 
+				from contract_product_c 
+				where CONTRACT_ID=cc.CONTRACT_ID
+			)as TOTAL_AMOUNT,
+			CREQUEST,
+			CUSTOM_NAME,
+			SHIP_TIME,
+			IMPORT_NUM,
+			DELIVERY_PERIOD,
+			REMARK,
+			PRINT_STYLE,
+			OLD_STATE,
+			STATE,
+			TRADE_TERMS,
+			CREATE_BY,
+			CREATE_DEPT,
+			CREATE_TIME
+		FROM
+			contract_c cc
+	</select>
+	
+	<select id="get" parameterType="string" resultMap="contractViewRM">
+		select
+			cc.CONTRACT_ID,CONTRACT_NO,INPUT_BY,CHECK_BY,INSPECTOR,TOTAL_AMOUNT,
+			CREQUEST,CUSTOM_NAME,SHIP_TIME,IMPORT_NUM,DELIVERY_PERIOD,REMARK,
+			PRINT_STYLE,OLD_STATE,STATE,TRADE_TERMS,CREATE_BY,CREATE_DEPT,CREATE_TIME,
+		
+		  	CONTRACT_PRODUCT_ID,FACTORY_ID,PRODUCT_NO,PRODUCT_NAME,PRODUCT_DESC,CNUMBER,PACKING_UNIT,PRICE,AMOUNT,
+			ext_id,ext_factory_id,ext_factory_name,ext_product_no,ext_product_name,ext_product_desc,ext_cnumber,ext_packing_unit,ext_price,ext_amount
+		from
+		(
+			SELECT
+				CONTRACT_ID,CONTRACT_NO,INPUT_BY,CHECK_BY,INSPECTOR,TOTAL_AMOUNT,
+				CREQUEST,CUSTOM_NAME,SHIP_TIME,IMPORT_NUM,DELIVERY_PERIOD,REMARK,
+				PRINT_STYLE,OLD_STATE,STATE,TRADE_TERMS,CREATE_BY,CREATE_DEPT,CREATE_TIME
+			FROM
+				contract_c
+		)cc
+		LEFT JOIN
+		(
+			SELECT
+				CONTRACT_ID,CONTRACT_PRODUCT_ID,FACTORY_ID,PRODUCT_NO,PRODUCT_NAME,PRODUCT_DESC,CNUMBER,PACKING_UNIT,PRICE,AMOUNT,
+				ext_id,ext_factory_id,ext_factory_name,ext_product_no,ext_product_name,ext_product_desc,ext_cnumber,ext_packing_unit,ext_price,ext_amount
+			FROM
+			(
+				SELECT 
+					cpc.CONTRACT_PRODUCT_ID,
+					cpc.CONTRACT_ID,
+					cpc.FACTORY_ID,
+					fc.FACTORY_NAME,
+					cpc.PRODUCT_NO,
+					cpc.PRODUCT_NAME,
+					cpc.PRODUCT_DESC,
+					cpc.CNUMBER,
+					cpc.PACKING_UNIT,
+					cpc.PRICE,
+					cpc.AMOUNT
+				FROM
+					contract_product_c cpc
+				LEFT JOIN
+					factory_c fc
+				ON 
+					cpc.factory_id=fc.factory_id
+			)cpf
+			LEFT JOIN
+			(
+				SELECT 
+					epc.EXT_CPRODUCT_ID as ext_id,
+					epc.CONTRACT_PRODUCT_ID as ext_contract_product_id,
+					epc.FACTORY_ID as ext_factory_id,
+					fc.FACTORY_NAME as ext_factory_name,
+					epc.PRODUCT_NO as ext_product_no,
+					epc.PRODUCT_NAME as ext_product_name,
+					epc.PRODUCT_DESC as ext_product_desc,
+					epc.CNUMBER as ext_cnumber,
+					epc.PACKING_UNIT as ext_packing_unit,
+					epc.PRICE as ext_price,
+					epc.AMOUNT as ext_amount
+				FROM
+					ext_cproduct_c epc
+				LEFT JOIN
+					factory_c fc
+				ON 
+					epc.factory_id=fc.factory_id
+			)epf
+			on cpf.contract_product_id=epf.ext_contract_product_id
+		)cepf
+		on cc.CONTRACT_ID=cepf.CONTRACT_ID
+		where cc.CONTRACT_ID=#{id} 
+	</select>
+	<!--合同表数据使用  -->
+	<resultMap type="cn.zg.zx.domain.Contract" id="contractRM">
+		<id property="id" column="CONTRACT_ID"/>
+		<result property="offeror" column="OFFEROR"/>
+		<result property="contractNo" column="CONTRACT_NO"/>
+		<!-- 货物数 -->
+		<result property="cpnum" column="CPNUM"/>
+		<!-- 附件数 -->
+		<result property="epnum" column="EPNUM"/>
+		
+		<result property="signingDate" column="SIGNING_DATE"/>
+		<result property="inputBy" column="INPUT_BY"/>
+		<result property="checkBy" column="CHECK_BY"/>
+		<result property="inspector" column="INSPECTOR"/>
+		<result property="totalAmount" column="TOTAL_AMOUNT"/>
+		<result property="crequest" column="CREQUEST"/>
+		<result property="customName" column="CUSTOM_NAME"/>
+		<result property="shipTime" column="SHIP_TIME"/>
+		<result property="importNum" column="IMPORT_NUM"/>
+		<result property="deliveryPeriod" column="DELIVERY_PERIOD"/>
+		<result property="remark" column="REMARK"/>
+		<result property="printStyle" column="PRINT_STYLE"/>
+		<result property="oldState" column="OLD_STATE"/>
+		<result property="state" column="STATE"/>
+		<result property="outState" column="OUT_STATE"/>
+		<result property="tradeTerms" column="TRADE_TERMS"/>
+		
+		<result property="createBy" column="CREATE_BY"/>
+		<result property="createDept" column="CREATE_DEPT"/>
+		<result property="createTime" column="CREATE_TIME"/>
+	</resultMap>
+	<update id="changeState" parameterType="map">
+		update contract_c
+		set STATE=#{state}
+		where CONTRACT_ID in
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>
+	</update>
+	<delete id="deleteBatch" parameterType="string">
+		delete from CONTRACT_C
+		where STATE=0
+		and CONTRACT_ID in
+		<foreach collection="array" open="(" close=")" item="id" separator=",">
+			#{id}
+		</foreach>
+	</delete>
+	<!-- 获取最新的合同号 -->
+	<select id="getContractNo" parameterType="int" resultType="int">
+		select 
+			IFNULL(SUBSTR(MAX(CONTRACT_NO) FROM 5 FOR 4),1)
+		from
+			contract_c where CONTRACT_NO like '${value}ZX%';
+	</select>
+	<!-- 添加操作 -->
+	<insert id="insert" parameterType="cn.zg.zx.domain.Contract">
+		insert contract_c
+		(CONTRACT_ID,OFFEROR,CONTRACT_NO,SIGNING_DATE
+		,INPUT_BY,CHECK_BY,INSPECTOR,TOTAL_AMOUNT
+		,CREQUEST,CUSTOM_NAME,SHIP_TIME,IMPORT_NUM
+		,DELIVERY_PERIOD,REMARK,PRINT_STYLE,OLD_STATE
+		,STATE,OUT_STATE,TRADE_TERMS,CREATE_BY
+		,CREATE_DEPT,CREATE_TIME)
+		values
+		(#{id},#{offeror},#{contractNo},#{signingDate}
+		,#{inputBy},#{checkBy},#{inspector},#{totalAmount}
+		,#{crequest},#{customName},#{shipTime},#{importNum}
+		,#{deliveryPeriod},#{remark},#{printStyle}
+		,#{oldState},#{state},#{outState},#{tradeTerms}
+		,#{createBy},#{createDept},#{createTime})
+	</insert>
+	<!-- 修改操作 -->
+	<update id="update" parameterType="cn.zg.zx.domain.Contract">
+		update contract_c
+		<set>
+			<if test="offeror!=null">OFFEROR=#{offeror},</if>
+			<if test="contractNo!=null">CONTRACT_NO=#{contractNo},</if>
+			<if test="signingDate!=null">SIGNING_DATE=#{signingDate},</if>
+			<if test="inputBy!=null">INPUT_BY=#{inputBy},</if>
+			<if test="checkBy!=null">CHECK_BY=#{checkBy},</if>
+			<if test="inspector!=null">INSPECTOR=#{inspector},</if>
+			<if test="totalAmount!=null">TOTAL_AMOUNT=#{totalAmount},</if>
+			<if test="crequest!=null">CREQUEST=#{crequest},</if>
+			<if test="customName!=null">CUSTOM_NAME=#{customName},</if>
+			<if test="shipTime!=null">SHIP_TIME=#{shipTime},</if>
+			<if test="importNum!=null">IMPORT_NUM=#{importNum},</if>
+			<if test="deliveryPeriod!=null">DELIVERY_PERIOD=#{deliveryPeriod},</if>
+			<if test="remark!=null">REMARK=#{remark},</if>
+			<if test="printStyle!=null">PRINT_STYLE=#{printStyle},</if>
+			<if test="oldState!=null">OLD_STATE=#{oldState},</if>
+			<if test="state!=null">STATE=#{state},</if>
+			<if test="outState!=null">OUT_STATE=#{outState},</if>
+			<if test="tradeTerms!=null">TRADE_TERMS=#{tradeTerms},</if>
+			<if test="createBy!=null">CREATE_BY=#{createBy},</if>
+			<if test="createDept!=null">CREATE_DEPT=#{createDept},</if>
+			<if test="createTime!=null">CREATE_TIME=#{createTime},</if>
+		</set>
+		where CONTRACT_ID=#{id}
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+

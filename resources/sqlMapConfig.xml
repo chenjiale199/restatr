@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+	PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!--链接数据库信息-->
+<!---->
+<!-- 链接数据库信息 -->
+<!--  -->
+<configuration>
+	<!-- 开发环境，测试环境，... -->
+	<!-- <environments default="dev">
+		<environment id="dev">
+			<transactionManager type=""></transactionManager>
+			<dataSource type=""></dataSource>
+		</environment>
+		<environment id="test">
+			<transactionManager type=""></transactionManager>
+			<dataSource type=""></dataSource>
+		</environment>
+	</environments> -->
+	<!--不需要别名-->
+	<!--mapping通过插件实现-->
+</configuration>

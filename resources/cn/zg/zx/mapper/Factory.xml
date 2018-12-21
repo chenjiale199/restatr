@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zg.zx.mapper.FactoryMapper">
+
+	<!-- 数据库表映射 -->
+	<resultMap id="factoryRM" type="cn.zg.zx.domain.Factory">
+		<id property="id" column="FACTORY_ID"/>
+		<result property="fullName" column="FULL_NAME"/>
+		<result property="factoryName" column="FACTORY_NAME"/>
+		<result property="contractor" column="CONTRACTOR"/>
+		<result property="phone" column="PHONE"/>
+		<result property="mobile" column="MOBILE"/>
+		<result property="fax" column="FAX"/>
+		<result property="cnote" column="CNOTE"/>
+		<result property="orderNo" column="ORDER_NO"/>
+		<result property="state" column="STATE"/>
+	</resultMap>
+	
+	<!-- 修改状态 -->
+	<update id="changeState" parameterType="map">
+		update factory_c 
+		set state=#{state}
+		where factory_id in
+		<foreach collection="ids" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>	
+	</update>
+	
+	
+	<!-- 批量删除 -->
+	<delete id="deleteBatch" parameterType="string">
+		delete from 
+		factory_c
+		where factory_id in
+		<foreach collection="array" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>
+	</delete>
+	
+	
+	<!-- 删除 -->
+	<delete id="delete" parameterType="string">
+		delete from 
+		factory_c
+		where FACTORY_ID=#{id}
+	</delete>
+	
+	
+	<!-- 修改工厂 -->
+	<!-- 容易漏掉,号使用<set>标签和<if> -->
+	<update id="update" parameterType="cn.zg.zx.domain.Factory">
+		update factory_c
+		<set>
+			<if test="fullName!=null">
+				FULL_NAME=#{fullName},
+			</if>
+			<if test="factoryName!=null">
+				FACTORY_NAME=#{factoryName},
+			</if>
+			<if test="contractor!=null">
+				CONTRACTOR=#{contractor},
+			</if>
+			<if test="phone!=null">
+				PHONE=#{phone},
+			</if>
+			<if test="mobile!=null">
+				MOBILE=#{mobile},
+			</if>
+			<if test="fax!=null">
+				FAX=#{fax},
+			</if>
+			<if test="cnote!=null">
+				CNOTE=#{cnote},
+			</if>
+			<if test="fullName!=null">
+				FULL_NAME=#{fullName},
+			</if>
+			<if test="orderNo!=null">
+				ORDER_NO=#{orderNo},
+			</if>
+			<if test="state!=null">
+				STATE=#{state},
+			</if>
+		</set>
+		where FACTORY_ID=#{id}
+	</update>
+	
+	<!-- 获取一个工厂信息 -->
+	<select id="get" parameterType="string" resultMap="factoryRM">
+		select * from factory_c
+		where FACTORY_ID=#{id}
+	</select>
+	
+	<!-- 新增工厂 -->
+	<insert id="insert" parameterType="cn.zg.zx.domain.Factory">
+		insert into factory_c
+		(FACTORY_ID,FULL_NAME,FACTORY_NAME,CONTRACTOR,PHONE,MOBILE,FAX,CNOTE,ORDER_NO,STATE)
+		values(uuid(),#{fullName},#{factoryName},#{contractor},#{phone},#{mobile},#{fax},#{cnote},#{orderNo},#{state})
+	</insert>
+	
+	
+	<!-- 查询所有记录 
+		该语句中包含状态是为启动的 ,在条件中需要加入 判断语句来获取状态正常的数据
+	-->
+	<select id="find" parameterType="cn.zg.zx.domain.Factory" resultMap="factoryRM">
+		select * from factory_c
+		where 1=1
+		<if test="state!=null">
+			and STATE=#{state}
+		</if>
+		order by ORDER_NO
+	</select>
+	
+	<select id="combo" resultMap="factoryRM">
+		select FACTORY_ID,FACTORY_NAME
+		from factory_c 
+		where STATE=1
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

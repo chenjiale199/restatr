@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.zg.zx.mapper.ExtCproductMapper">
+	<resultMap type="cn.zg.zx.domain.ExtCproduct" id="extCproductRM">
+		<id property="id" column="EXT_CPRODUCT_ID"/>
+		<result property="contractProductId" column="CONTRACT_PRODUCT_ID"/>
+		<result property="contractId" column="CONTRACT_ID"/>
+		<result property="factoryId" column="FACTORY_ID"/>
+		<result property="factoryName" column="FACTORY_NAME"/>
+		<result property="productNo" column="PRODUCT_NO"/>
+		<result property="productName" column="PRODUCT_NAME"/>
+		<result property="productImage" column="PRODUCT_IMAGE"/>
+		<result property="productDesc" column="PRODUCT_DESC"/>
+		<result property="cnumber" column="CNUMBER"/>
+		<result property="packingUnit" column="PACKING_UNIT"/>
+		<result property="price" column="PRICE"/>
+		<result property="amount" column="AMOUNT"/>
+	</resultMap>
+	<select id="get" parameterType="string" resultMap="extCproductRM">
+		select ecc.*,fc.factory_name from ext_cproduct_c ecc
+		<!-- 使用左连接 让所有货物都必须出现 -->
+		left join
+			factory_c fc
+		on 
+			ecc.factory_id=fc.factory_id
+		where 
+		    EXT_CPRODUCT_ID=#{id}
+	</select>
+	<update id="update" parameterType="cn.zg.zx.domain.ExtCproduct">
+		update contract_product_c
+		<set>
+		<if test="factoryId!=null"> FACTORY_ID=#{factoryId}</if>
+		<if test="productNo!=null"> PRODUCT_NO=#{productNo}</if>
+		<if test="productName!=null"> PRODUCT_NAME=#{productName}</if>
+		<if test="productImage!=null"> PRODUCT_IMAGE=#{productImage}</if>
+		<if test="productDesc!=null"> PRODUCT_DESC=#{productDesc}</if>
+		<if test="cnumber!=null"> CNUMBER=#{cnumber}</if>
+		<if test="packingUnit!=null"> PACKING_UNIT=#{packingUnit}</if>
+		<if test="price!=null"> PRICE=#{price}</if>
+		<if test="amount!=null"> AMOUNT=#{amount}</if>
+		</set>
+		where EXT_CPRODUCT_ID=#{id}
+	</update>
+	<delete id="delete" parameterType="string">
+		delete from ext_cproduct_c
+		where EXT_CPRODUCT_ID=#{id}
+	</delete>
+	<!-- 批量删除 -->
+	<delete id="deleteCascade" parameterType="string">
+		delete from 
+			ext_cproduct_c
+		where 
+			contract_product_id
+		in
+		(
+			select
+				contract_product_id
+			from
+				contract_product_c
+			where
+				contract_id
+			in
+			<foreach collection="array" item="id" open="(" close=")" separator=",">
+				#{id}
+			</foreach>
+		)
+	</delete>
+	<insert id="insert" parameterType="cn.zg.zx.domain.ExtCproduct">
+		insert into ext_cproduct_c
+			(EXT_CPRODUCT_ID,CONTRACT_PRODUCT_ID,FACTORY_ID,PRODUCT_NO,PRODUCT_NAME
+			,PRODUCT_IMAGE,PRODUCT_DESC,CNUMBER,PACKING_UNIT,PRICE,AMOUNT) 
+		values
+		<!-- mySQL数据库中uuid函数只能在mySQL中使用，其他数据不能使用，如果需要更换数据库，则程序中设置UUID -->
+			(uuid(),#{contractProductId},#{factoryId},#{productNo},#{productName}
+			,#{productImage},#{productDesc},#{cnumber},#{packingUnit},#{price},#{amount})
+	</insert>
+	<select id="find" parameterType="cn.zg.zx.domain.ExtCproduct" resultMap="extCproductRM">
+		select ecc.*,fc.factory_name from ext_cproduct_c ecc
+		<!-- 使用左连接 让所有货物都必须出现 -->
+		left join
+			factory_c fc
+		on 
+			ecc.factory_id=fc.factory_id
+		where 1=1
+		<if test="contractProductId!=null">
+			and CONTRACT_PRODUCT_ID=#{contractProductId}
+		</if>
+	</select>
+</mapper>
